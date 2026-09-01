@@ -166,6 +166,33 @@ vm.runInContext(code, sandbox);
   if (sinLimite.cfg.data.datasets.length !== 1) throw new Error('Sin límite: no debe tener dataset de límite');
   console.log('  línea de límite: Peso "Máximo: 80 kg" ✓, Sueño "Mínimo: 8 h" ✓, Sin límite sin línea ✓');
 
+  const MET = '#10b981', MISS = '#ef4444', NEUTRAL = '#60a5fa', LIMIT = '#22d3ee';
+  if (peso.cfg.data.datasets[1].borderColor !== LIMIT) {
+    throw new Error('Peso: el umbral debe ser cian: ' + peso.cfg.data.datasets[1].borderColor);
+  }
+  const pesoPts = peso.cfg.data.datasets[0].pointBackgroundColor;
+  if (JSON.stringify(pesoPts) !== JSON.stringify([MISS, MISS, MISS])) {
+    throw new Error('Peso: puntos deberían ser todos rojos: ' + JSON.stringify(pesoPts));
+  }
+  const pesoSeg = peso.cfg.data.datasets[0].segment && peso.cfg.data.datasets[0].segment.borderColor;
+  if (typeof pesoSeg !== 'function') throw new Error('Peso: falta segment.borderColor');
+  if (pesoSeg({ p1DataIndex: 0 }) !== MISS) throw new Error('Peso: segmento 0 debería ser rojo');
+
+  const suenoPts = sueno.cfg.data.datasets[0].pointBackgroundColor;
+  if (JSON.stringify(suenoPts) !== JSON.stringify([MISS, MET, MISS])) {
+    throw new Error('Sueño: puntos deberían ser rojo/verde/rojo: ' + JSON.stringify(suenoPts));
+  }
+  const suenoSeg = sueno.cfg.data.datasets[0].segment.borderColor;
+  if (suenoSeg({ p1DataIndex: 1 }) !== MET) throw new Error('Sueño: segmento hacia 8h debería ser verde');
+  if (sueno.cfg.data.datasets[1].borderColor !== LIMIT) {
+    throw new Error('Sueño: el umbral debe ser cian');
+  }
+  const sinLimitePts = sinLimite.cfg.data.datasets[0].pointBackgroundColor;
+  if (!sinLimitePts.every(c => c === NEUTRAL)) {
+    throw new Error('Sin límite: la línea debe ser neutra: ' + JSON.stringify(sinLimitePts));
+  }
+  console.log('  colores: Peso rojo ✓, Sueño rojo/verde/rojo ✓, umbral cian ✓, Sin límite neutro ✓');
+
   for (const c of withChart) {
     if (c.cfg.data.datasets[0].data.length !== c.cfg.data.labels.length) {
       throw new Error('dataset de valores con longitud distinta a los labels');

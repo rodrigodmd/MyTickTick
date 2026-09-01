@@ -11,6 +11,13 @@ let trackerCharts = []; // un Chart por tracker (carousel)
 const MONTH_NAMES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
     'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 
+// Colores del gráfico de trackers (alineados con --success / --danger).
+// El umbral es cian para no mezclarse con verde, rojo ni el acento naranja.
+const TRACKER_LINE_MET = '#10b981';
+const TRACKER_LINE_MISS = '#ef4444';
+const TRACKER_LINE_LIMIT = '#22d3ee';
+const TRACKER_LINE_NEUTRAL = '#60a5fa';
+
 document.addEventListener('DOMContentLoaded', function () {
     initFilters();
     loadDashboard();
@@ -207,6 +214,35 @@ function fmtLimit(v) {
     return String(n);
 }
 
+// Usa isMet del backend; si falta, evalúa contra el límite (misma regla que Go).
+// null = el tracker no tiene límite (línea neutra).
+function entryIsMet(entry, tracker, hasLimit) {
+    if (!hasLimit) return null;
+    if (typeof entry.isMet === 'boolean') return entry.isMet;
+    const v = Number(entry.value);
+    const limit = Number(tracker.limitValue);
+    if (!isFinite(v) || !isFinite(limit)) return null;
+    if (tracker.limitType === 'min') return v >= limit;
+    return v <= limit;
+}
+
+function colorForMet(isMet) {
+    if (isMet === null || isMet === undefined) return TRACKER_LINE_NEUTRAL;
+    return isMet ? TRACKER_LINE_MET : TRACKER_LINE_MISS;
+}
+
+// Nunca tira: Chart.js a veces llama esto sin p1DataIndex.
+function segmentMetColor(ctx, mets) {
+    try {
+        if (!ctx) return undefined;
+        const idx = (ctx.p1DataIndex != null) ? ctx.p1DataIndex : ctx.dataIndex;
+        if (idx == null || idx < 0 || idx >= mets.length) return undefined;
+        return colorForMet(mets[idx]);
+    } catch (e) {
+        return undefined;
+    }
+}
+
 // Carousel: un gráfico de líneas POR TRACKER dentro del rango del mes/año
 // seleccionado. Cada tracker tiene su propia pantalla (peso no se mezcla con
 // sueño, etc.) y se desliza entre ellos con swipe o con las flechas.
@@ -247,56 +283,71 @@ async function renderTrackerChart(trackers, month, year) {
         const h3 = document.createElement('h3');
         h3.textContent = tracker.name;
         slide.appendChild(h3);
+        carousel.appendChild(slide);
 
         if (rows.length === 0) {
             const p = document.createElement('p');
             p.className = 'empty-state';
             p.textContent = 'Sin registros en este período.';
             slide.appendChild(p);
-        } else {
-            const canvas = document.createElement('canvas');
-            slide.appendChild(canvas);
-            const yScale = computeYScale(rows.map(r => r.value));
-            const limitValue = Number(tracker.limitValue);
-            const hasLimit = isFinite(limitValue) && tracker.limitValue !== '';
-            const unit = tracker.unit ? ' ' + tracker.unit : '';
-            const limitLabel = hasLimit
-                ? ((tracker.limitType === 'min' ? 'Mínimo' : 'Máximo') + ': ' + fmtLimit(limitValue) + unit)
-                : null;
+            return;
+        }
 
-            // Dataset 1: los valores registrados (línea continua).
-            const datasets = [{
-                label: tracker.name,
-                data: rows.map(r => r.value),
-                fill: false,
-                tension: 0.1,
-                spanGaps: true,
-                pointRadius: 3
-            }];
+        const canvas = document.createElement('canvas');
+        slide.appendChild(canvas);
+        const yScale = computeYScale(rows.map(r => r.value));
+        const limitValue = Number(tracker.limitValue);
+        const hasLimit = isFinite(limitValue) && tracker.limitValue !== '';
+        const unit = tracker.unit ? ' ' + tracker.unit : '';
+        const limitLabel = hasLimit
+            ? ((tracker.limitType === 'min' ? 'Mínimo' : 'Máximo') + ': ' + fmtLimit(limitValue) + unit)
+            : null;
 
-            if (hasLimit) {
-                // Límite actual del tracker: línea horizontal punteada sobre
-                // todo el período. La escala Y se expande para que siempre sea
-                // visible, aunque el valor esté fuera del rango de los datos.
-                delete yScale.beginAtZero;
-                if (yScale.min === undefined || limitValue < yScale.min) yScale.min = limitValue;
-                if (yScale.max === undefined || limitValue > yScale.max) yScale.max = limitValue;
-                if (yScale.min !== undefined && yScale.max !== undefined && yScale.min === yScale.max) {
-                    const pad = Math.max(Math.abs(yScale.min) * 0.1, 1);
-                    yScale.min -= pad;
-                    yScale.max += pad;
-                }
-                datasets.push({
-                    label: limitLabel,
-                    data: rows.map(() => limitValue),
-                    borderDash: [6, 4],
-                    borderWidth: 1.5,
-                    pointRadius: 0,
-                    fill: false
-                });
+        const mets = rows.map(r => entryIsMet(r, tracker, hasLimit));
+        const pointColors = mets.map(colorForMet);
+        const datasets = [{
+            label: tracker.name,
+            data: rows.map(r => r.value),
+            fill: false,
+            tension: 0.1,
+            spanGaps: true,
+            pointRadius: 4,
+            pointHoverRadius: 6,
+            pointBackgroundColor: pointColors,
+            pointBorderColor: pointColors,
+            borderColor: hasLimit ? TRACKER_LINE_MET : TRACKER_LINE_NEUTRAL,
+            borderWidth: 2,
+            segment: {
+                borderColor: (ctx) => segmentMetColor(ctx, mets)
             }
+        }];
 
-            trackerCharts.push(new Chart(canvas.getContext('2d'), {
+        if (hasLimit) {
+            // Límite actual del tracker: línea horizontal punteada sobre
+            // todo el período. La escala Y se expande para que siempre sea
+            // visible, aunque el valor esté fuera del rango de los datos.
+            delete yScale.beginAtZero;
+            if (yScale.min === undefined || limitValue < yScale.min) yScale.min = limitValue;
+            if (yScale.max === undefined || limitValue > yScale.max) yScale.max = limitValue;
+            if (yScale.min !== undefined && yScale.max !== undefined && yScale.min === yScale.max) {
+                const pad = Math.max(Math.abs(yScale.min) * 0.1, 1);
+                yScale.min -= pad;
+                yScale.max += pad;
+            }
+            datasets.push({
+                label: limitLabel,
+                data: rows.map(() => limitValue),
+                borderDash: [6, 4],
+                borderWidth: 2,
+                borderColor: TRACKER_LINE_LIMIT,
+                backgroundColor: TRACKER_LINE_LIMIT,
+                pointRadius: 0,
+                fill: false
+            });
+        }
+
+        try {
+            const chart = new Chart(canvas.getContext('2d'), {
                 type: 'line',
                 data: {
                     labels: rows.map(r => r.entryDate),
@@ -318,19 +369,28 @@ async function renderTrackerChart(trackers, month, year) {
                         legend: { display: false },
                         tooltip: {
                             filter: function (item) {
-                                // El punto de la línea punteada (dataset 1) no
-                                // aparece en el tooltip: solo el valor registrado.
                                 return item.datasetIndex === 0;
                             },
                             callbacks: {
-                                label: (item) => ` ${item.parsed.y}${unit}`
+                                label: (item) => {
+                                    const base = ` ${item.parsed.y}${unit}`;
+                                    const met = mets[item.dataIndex];
+                                    if (met === null || met === undefined) return base;
+                                    return base + (met ? ' · cumplió' : ' · no cumplió');
+                                }
                             }
                         }
                     }
                 }
-            }));
+            });
+            trackerCharts.push(chart);
+        } catch (err) {
+            console.error('Error dibujando gráfico de ' + tracker.name + ':', err);
+            const p = document.createElement('p');
+            p.className = 'empty-state';
+            p.textContent = 'No se pudo dibujar el gráfico.';
+            slide.appendChild(p);
         }
-        carousel.appendChild(slide);
     });
 }
 
