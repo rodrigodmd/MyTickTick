@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MyTickTick</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div id="app">
+        <header id="site-header"></header>
+        <main id="site-main">
+            <section class="page">
+                <h2 class="page-title">Bienvenido a MyTickTick</h2>
+                <p class="page-lead">Gestión de tareas personales con tres tipos de seguimiento. Elegí una sección para empezar.</p>
+                <div class="home-cards">
+                    <a class="home-card" href="/monthly-tasks">
+                        <span class="home-card__icon">&#128197;</span>
+                        <h3>Tareas Mensuales</h3>
+                        <p>Tareas recurrentes que se repiten cada mes, con historial de cumplimiento.</p>
+                    </a>
+                    <a class="home-card" href="/immediate-tasks">
+                        <span class="home-card__icon">&#9889;</span>
+                        <h3>Tareas Inmediatas</h3>
+                        <p>Tareas para los próximos días, con fecha límite y prioridad.</p>
+                    </a>
+                    <a class="home-card" href="/trackers">
+                        <span class="home-card__icon">&#128200;</span>
+                        <h3>Trackers Diarios</h3>
+                        <p>Métricas diarias (agua, sueño, peso) con target y umbral.</p>
+                    </a>
+                    <a class="home-card" href="/dashboard">
+                        <span class="home-card__icon">&#128202;</span>
+                        <h3>Dashboard</h3>
+                        <p>Gráficos de cumplimiento histórico y evolución de trackers.</p>
+                    </a>
+                </div>
+            </section>
+        </main>
+    </div>
+    <script src="/js/layout.js"></script>
+    <script src="/js/app.js"></script>
+</body>
+</html>

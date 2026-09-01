@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trackers - MyTickTick</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div id="app">
+        <header id="site-header"></header>
+        <main id="site-main">
+            <div class="page">
+                <div class="page-head">
+                    <h2 class="page-title">Trackers Diarios</h2>
+                    <button type="button" class="btn btn-primary" id="create-tracker-btn">Nuevo Tracker</button>
+                </div>
+
+                <!-- 10.2 - Formulario de creación (10.3 - límite unilateral min/máx) -->
+                <section id="create-form" class="task-form" hidden>
+                    <h3>Crear tracker diario</h3>
+                    <p class="task-form__hint">
+                        Definí un <strong>límite unilateral</strong> con un tipo
+                        (mínimo o máximo). El registro del día se marca como
+                        cumplido si alcanza (mín) o no supera (máx) el límite.
+                        La desviación muestra cuánto superó el límite (siempre ≥ 0).
+                    </p>
+                    <form id="create-tracker-form" novalidate>
+                        <div class="form-field">
+                            <label for="tracker-name">Nombre <span class="required" aria-hidden="true">*</span></label>
+                            <input type="text" id="tracker-name" name="name" required
+                                   placeholder="Ej: Peso, Sueño, Agua" autocomplete="off">
+                            <p class="field-error" id="tracker-name-error" hidden>El nombre es obligatorio.</p>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-field">
+                                <label for="tracker-limit">Límite (valor) <span class="required" aria-hidden="true">*</span></label>
+                                <input type="number" id="tracker-limit" name="limitValue" step="any"
+                                       placeholder="Ej: 80" inputmode="decimal">
+                                <p class="field-error" id="tracker-limit-error" hidden>
+                                    El límite debe ser un número.</p>
+                            </div>
+                            <div class="form-field">
+                                <label>Tipo de límite <span class="required" aria-hidden="true">*</span></label>
+                                <div class="radio-group" role="radiogroup" aria-label="Tipo de límite">
+                                    <label class="radio-option">
+                                        <input type="radio" id="tracker-limit-type-max" name="limitType" value="max" checked>
+                                        <span>Máximo (no superar) <em>p. ej. peso 80 kg</em></span>
+                                    </label>
+                                    <label class="radio-option">
+                                        <input type="radio" id="tracker-limit-type-min" name="limitType" value="min">
+                                        <span>Mínimo (alcanzar) <em>p. ej. sueño 6 h</em></span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-field">
+                            <label for="tracker-unit">Unidad</label>
+                            <input type="text" id="tracker-unit" name="unit"
+                                   placeholder="Ej: kg, horas, L (opcional)" autocomplete="off">
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary" id="submit-create-tracker-btn">Crear tracker</button>
+                            <button type="button" class="btn" id="cancel-create-tracker-btn">Cancelar</button>
+                        </div>
+                        <p class="form-feedback" id="tracker-form-feedback" hidden role="status"></p>
+                    </form>
+                </section>
+
+                <!-- 10.1 - Lista de trackers -->
+                <div id="tracker-list">
+                    <!-- Lista de trackers será cargada dinámicamente -->
+                </div>
+            </div>
+        </main>
+
+        <!-- 10.4 - Registro de valor diario (modal) -->
+        <div class="modal-overlay" id="record-modal" hidden>
+            <div class="modal">
+                <div class="modal-header">
+                    <h3 id="record-tracker-name">Registrar valor</h3>
+                    <button type="button" class="modal-close" id="close-record" aria-label="Cerrar">✕</button>
+                </div>
+                <div class="modal-body">
+                    <p class="history-period" id="record-target-hint"></p>
+                    <form id="record-form" novalidate>
+                        <div class="form-field">
+                            <label for="record-value">Valor <span class="required" aria-hidden="true">*</span></label>
+                            <input type="number" id="record-value" name="value" step="any"
+                                   placeholder="Ej: 79.5" inputmode="decimal">
+                            <p class="field-error" id="record-value-error" hidden>El valor debe ser un número.</p>
+                        </div>
+                        <div class="form-field">
+                            <label for="record-date">Fecha</label>
+                            <input type="date" id="record-date" name="date">
+                        </div>
+                        <div class="form-field">
+                            <label for="record-notes">Notas</label>
+                            <input type="text" id="record-notes" name="notes"
+                                   placeholder="Ej: después de la siesta (opcional)" autocomplete="off">
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary" id="submit-record-btn">Guardar registro</button>
+                            <button type="button" class="btn" id="cancel-record-btn">Cancelar</button>
+                        </div>
+                        <p class="form-feedback" id="record-feedback" hidden role="status"></p>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Editar tracker (límite/nombre/unidad) sin perder el historial de registros -->
+        <div class="modal-overlay" id="edit-modal" hidden>
+            <div class="modal">
+                <div class="modal-header">
+                    <h3 id="edit-tracker-name">Editar tracker</h3>
+                    <button type="button" class="modal-close" id="close-edit" aria-label="Cerrar">✕</button>
+                </div>
+                <div class="modal-body">
+                    <p class="history-period" id="edit-hint">
+                        Podés cambiar nombre, límite y unidad. El <strong>historial de registros no se toca</strong>:
+                        solo cambia la meta contra la que se evalúan los futuros días.
+                    </p>
+                    <form id="edit-tracker-form" novalidate>
+                        <div class="form-field">
+                            <label for="edit-tracker-name-input">Nombre <span class="required" aria-hidden="true">*</span></label>
+                            <input type="text" id="edit-tracker-name-input" name="name" required
+                                   autocomplete="off">
+                            <p class="field-error" id="edit-tracker-name-error" hidden>El nombre es obligatorio.</p>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-field">
+                                <label for="edit-tracker-limit">Límite (valor) <span class="required" aria-hidden="true">*</span></label>
+                                <input type="number" id="edit-tracker-limit" name="limitValue" step="any"
+                                       inputmode="decimal">
+                                <p class="field-error" id="edit-tracker-limit-error" hidden>
+                                    El límite debe ser un número.</p>
+                            </div>
+                            <div class="form-field">
+                                <label>Tipo de límite <span class="required" aria-hidden="true">*</span></label>
+                                <div class="radio-group" role="radiogroup" aria-label="Tipo de límite">
+                                    <label class="radio-option">
+                                        <input type="radio" id="edit-limit-type-max" name="edit-limitType" value="max">
+                                        <span>Máximo (no superar)</span>
+                                    </label>
+                                    <label class="radio-option">
+                                        <input type="radio" id="edit-limit-type-min" name="edit-limitType" value="min">
+                                        <span>Mínimo (alcanzar)</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-field">
+                            <label for="edit-tracker-unit">Unidad</label>
+                            <input type="text" id="edit-tracker-unit" name="unit"
+                                   placeholder="Ej: kg, horas, L (opcional)" autocomplete="off">
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary" id="submit-edit-tracker-btn">Guardar cambios</button>
+                            <button type="button" class="btn" id="cancel-edit-tracker-btn">Cancelar</button>
+                        </div>
+                        <p class="form-feedback" id="edit-feedback" hidden role="status"></p>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- 10.5 / 10.6 - Historial con cumplimiento y desviación (modal) -->
+        <div class="modal-overlay" id="history-modal" hidden>
+            <div class="modal">
+                <div class="modal-header">
+                    <h3 id="history-tracker-name">Historial</h3>
+                    <button type="button" class="modal-close" id="close-history" aria-label="Cerrar">✕</button>
+                </div>
+                <div class="modal-body">
+                    <p class="history-period" id="history-range-hint"></p>
+                    <div id="history-list">
+                        <!-- Historial cargado dinámicamente -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="/js/layout.js"></script>
+    <script src="/js/app.js"></script>
+    <script src="/js/undo.js"></script>
+    <script src="/js/trackers.js"></script>
+</body>
+</html>

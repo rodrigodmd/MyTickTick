@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tareas Inmediatas - MyTickTick</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div id="app">
+        <header id="site-header"></header>
+        <main id="site-main">
+            <div class="page">
+                <!-- Carga rápida: escribir un nombre y presionar Enter crea la tarea
+                     (fecha límite +7 días y prioridad media por defecto). -->
+                <form id="quick-add-form" class="quick-add" novalidate>
+                    <input type="text" id="quick-add-input" name="name"
+                           placeholder="Escribí una tarea y presioná Enter…"
+                           autocomplete="off" aria-label="Agregar tarea rápida">
+                    <button type="submit" class="btn btn-primary" id="quick-add-btn">Agregar</button>
+                </form>
+
+                <div class="page-head">
+                    <h2 class="page-title">Tareas Inmediatas</h2>
+                </div>
+
+                <!-- 9.1 - Filtros y 9.5 - ordenamiento por fecha límite -->
+                <div class="task-filters">
+                    <label>Mostrar
+                        <select id="status-filter" aria-label="Filtrar por estado">
+                            <option value="open" selected>Pendientes</option>
+                            <option value="all">Todas</option>
+                            <option value="completed">Completadas</option>
+                        </select>
+                    </label>
+                    <label>Ordenar por
+                        <select id="sort-order" aria-label="Ordenar lista">
+                            <option value="priority" selected>Prioridad, luego fecha</option>
+                            <option value="dueDate">Fecha límite</option>
+                        </select>
+                    </label>
+                </div>
+
+                <!-- 9.2 - Formulario de creación (con 9.3 fecha + 9.4 prioridad) -->
+                <section id="create-form" class="task-form" hidden>
+                    <h3>Crear tarea inmediata</h3>
+                    <p class="task-form__hint">Para cumplir en los próximos días: fecha límite y prioridad.</p>
+                    <form id="create-task-form" novalidate>
+                        <div class="form-field">
+                            <label for="task-name">Nombre <span class="required" aria-hidden="true">*</span></label>
+                            <input type="text" id="task-name" name="name" required
+                                   placeholder="Ej: Renovar pasaporte" autocomplete="off">
+                            <p class="field-error" id="task-name-error" hidden>El nombre es obligatorio.</p>
+                        </div>
+                        <div class="form-field">
+                            <label for="task-description">Descripción</label>
+                            <textarea id="task-description" name="description" rows="3"
+                                      placeholder="Detalles (opcional)…"></textarea>
+                        </div>
+                        <div class="form-field">
+                            <label for="task-due-date">Fecha límite <span class="required" aria-hidden="true">*</span></label>
+                            <input type="date" id="task-due-date" name="dueDate" required>
+                            <p class="field-error" id="task-due-date-error" hidden>La fecha límite es obligatoria.</p>
+                        </div>
+                        <div class="form-field">
+                            <label for="task-priority">Prioridad</label>
+                            <select id="task-priority" name="priority" class="priority-select" aria-label="Prioridad">
+                                <option value="high">Alta — aparece primero</option>
+                                <option value="medium" selected>Media</option>
+                                <option value="low">Baja</option>
+                            </select>
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary" id="submit-create-btn">Crear tarea</button>
+                            <button type="button" class="btn" id="cancel-create-btn">Cancelar</button>
+                        </div>
+                        <p class="form-feedback" id="form-feedback" hidden role="status"></p>
+                    </form>
+                </section>
+
+                <!-- Formulario de edición (mismos campos que la creación) -->
+                <section id="edit-form" class="task-form" hidden>
+                    <h3>Editar tarea inmediata</h3>
+                    <p class="task-form__hint">Cambiar nombre, descripción, fecha límite o prioridad.</p>
+                    <form id="edit-task-form" novalidate>
+                        <div class="form-field">
+                            <label for="edit-task-name">Nombre <span class="required" aria-hidden="true">*</span></label>
+                            <input type="text" id="edit-task-name" name="name" required
+                                   placeholder="Ej: Renovar pasaporte" autocomplete="off">
+                            <p class="field-error" id="edit-task-name-error" hidden>El nombre es obligatorio.</p>
+                        </div>
+                        <div class="form-field">
+                            <label for="edit-task-description">Descripción</label>
+                            <textarea id="edit-task-description" name="description" rows="3"
+                                      placeholder="Detalles (opcional)…"></textarea>
+                        </div>
+                        <div class="form-field">
+                            <label for="edit-task-due-date">Fecha límite <span class="required" aria-hidden="true">*</span></label>
+                            <input type="date" id="edit-task-due-date" name="dueDate" required>
+                            <p class="field-error" id="edit-task-due-date-error" hidden>La fecha límite es obligatoria.</p>
+                        </div>
+                        <div class="form-field">
+                            <label for="edit-task-priority">Prioridad</label>
+                            <select id="edit-task-priority" name="priority" class="priority-select" aria-label="Prioridad">
+                                <option value="high">Alta — aparece primero</option>
+                                <option value="medium" selected>Media</option>
+                                <option value="low">Baja</option>
+                            </select>
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary" id="submit-edit-btn">Guardar cambios</button>
+                            <button type="button" class="btn" id="cancel-edit-btn">Cancelar</button>
+                            <button type="button" class="btn btn-danger" id="delete-edit-btn">Eliminar</button>
+                        </div>
+                        <p class="form-feedback" id="edit-form-feedback" hidden role="status"></p>
+                    </form>
+                </section>
+
+                <div id="task-list">
+                    <!-- Lista de tareas será cargada dinámicamente -->
+                </div>
+            </div>
+        </main>
+    </div>
+    <script src="/js/layout.js"></script>
+    <script src="/js/app.js"></script>
+    <script src="/js/undo.js"></script>
+    <script src="/js/immediate-tasks.js"></script>
+</body>
+</html>

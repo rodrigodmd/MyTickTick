@@ -1,0 +1,52 @@
+services:
+  # Backend Go (API + frontend estático)
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: myticktick_api
+    ports:
+      - "${API_PORT:-8090}:8080"
+    environment:
+      - PORT=8080
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=${POSTGRES_USER:-myticktick}
+      - DB_PASSWORD=${POSTGRES_PASSWORD:-myticktick}
+      - DB_NAME=${POSTGRES_DB:-myticktick}
+      - MYTICKTICK_TOKEN_SECRET=${MYTICKTICK_TOKEN_SECRET:?MYTICKTICK_TOKEN_SECRET es requerido (make gen-secret)}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:8080/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  # Base de datos PostgreSQL
+  postgres:
+    image: postgres:16-alpine
+    container_name: myticktick_postgres
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-myticktick}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-myticktick}
+      - POSTGRES_DB=${POSTGRES_DB:-myticktick}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      # Backups: montar un host path para exportar dumps (ver BACKUP.md)
+      # - ${BACKUP_DIR:-./backups}:/backups
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-myticktick} -d ${POSTGRES_DB:-myticktick}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+volumes:
+  postgres_data:

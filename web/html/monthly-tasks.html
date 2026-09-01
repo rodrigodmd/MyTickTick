@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tareas Mensuales - MyTickTick</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div id="app">
+        <header id="site-header"></header>
+        <main id="site-main">
+            <div class="page">
+                <div class="page-head">
+                    <h2 class="page-title">Tareas Mensuales</h2>
+                    <button type="button" class="btn btn-primary" id="create-task-btn">Nueva Tarea</button>
+                </div>
+                <p class="page-hint">Tocá una card para cumplirla este mes · sostenela un momento para editarla o eliminarla.</p>
+
+                <!-- 8.2 - Formulario de creación -->
+                <section id="create-form" class="task-form" hidden>
+                    <h3>Crear tarea mensual</h3>
+                    <p class="task-form__hint">Se repite cada mes. Podrás marcarla como cumplida mes a mes.</p>
+                    <form id="create-task-form" novalidate>
+                        <div class="form-field">
+                            <label for="task-name">Nombre <span class="required" aria-hidden="true">*</span></label>
+                            <input type="text" id="task-name" name="name" required
+                                   placeholder="Ej: Pagar cuota de hijo" autocomplete="off">
+                            <p class="field-error" id="name-error" hidden>El nombre es obligatorio.</p>
+                        </div>
+                        <div class="form-field">
+                            <label for="task-description">Descripción</label>
+                            <textarea id="task-description" name="description" rows="3"
+                                      placeholder="Detalles (opcional)…"></textarea>
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary" id="submit-create-btn">Crear tarea</button>
+                            <button type="button" class="btn" id="cancel-create-btn">Cancelar</button>
+                        </div>
+                        <p class="form-feedback" id="form-feedback" hidden role="status"></p>
+                    </form>
+                </section>
+
+                <!-- 8.3 - Formulario de edición -->
+                <section id="edit-form" class="task-form" hidden>
+                    <h3>Editar tarea mensual</h3>
+                    <p class="task-form__hint">Cambiar el nombre o la descripción. El historial de cumplimiento no se modifica.</p>
+                    <form id="edit-task-form" novalidate>
+                        <div class="form-field">
+                            <label for="edit-task-name">Nombre <span class="required" aria-hidden="true">*</span></label>
+                            <input type="text" id="edit-task-name" name="name" required
+                                   placeholder="Ej: Pagar cuota de hijo" autocomplete="off">
+                            <p class="field-error" id="edit-task-name-error" hidden>El nombre es obligatorio.</p>
+                        </div>
+                        <div class="form-field">
+                            <label for="edit-task-description">Descripción</label>
+                            <textarea id="edit-task-description" name="description" rows="3"
+                                      placeholder="Detalles (opcional)…"></textarea>
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary" id="submit-edit-btn">Guardar cambios</button>
+                            <button type="button" class="btn" id="cancel-edit-btn">Cancelar</button>
+                            <button type="button" class="btn btn-danger" id="delete-edit-btn">Eliminar</button>
+                        </div>
+                        <p class="form-feedback" id="edit-form-feedback" hidden role="status"></p>
+                    </form>
+                </section>
+
+                <div id="task-list">
+                    <!-- Lista de tareas será cargada dinámicamente -->
+                </div>
+            </div>
+        </main>
+
+        <!-- 8.4 - Vista de historial (modal) -->
+        <div class="modal-overlay" id="history-modal" hidden>
+            <div class="modal">
+                <div class="modal-header">
+                    <h3 id="history-task-name">Historial</h3>
+                    <button type="button" class="modal-close" id="close-history" aria-label="Cerrar">✕</button>
+                </div>
+                <div class="modal-body">
+                    <p class="history-period" id="history-period">
+                        Estado de cumplimiento mes a mes (del más reciente al más antiguo).
+                    </p>
+                    <div id="history-list">
+                        <!-- Historial cargado dinámicamente -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="/js/layout.js"></script>
+    <script src="/js/app.js"></script>
+    <script src="/js/undo.js"></script>
+    <script src="/js/monthly-tasks.js"></script>
+</body>
+</html>

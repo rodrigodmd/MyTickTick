@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Entrar — MyTickTick</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .auth-wrap {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+        .auth-card {
+            width: 100%;
+            max-width: 380px;
+            background: var(--surface, #111);
+            border: 1px solid var(--border, #222);
+            border-radius: 16px;
+            padding: 2rem 1.75rem;
+        }
+        .auth-card .brand {
+            display: block;
+            text-align: center;
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: .2rem;
+            color: var(--text, #e8e8e8);
+            letter-spacing: 0.2px;
+        }
+        .auth-card .subtitle {
+            text-align: center;
+            color: var(--text-muted);
+            margin: 0 0 1rem;
+            font-size: 0.85rem;
+        }
+        .auth-tabs {
+            display: flex;
+            gap: .25rem;
+            background: var(--bg);
+            border-radius: 8px;
+            padding: .2rem;
+            margin-bottom: 1rem;
+        }
+        .auth-tabs button {
+            flex: 1;
+            padding: .4rem;
+            border: none;
+            border-radius: 6px;
+            background: transparent;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+        .auth-tabs button.active {
+            background: var(--accent);
+            color: #fff;
+        }
+        .auth-field { margin-bottom: .75rem; }
+        .auth-field label { display: block; margin-bottom: .3rem; color: var(--text-muted); font-size: .82rem; }
+        .auth-field input[type="text"],
+        .auth-field input[type="password"] {
+            width: 100%;
+            padding: .5rem .6rem;
+            border-radius: 6px;
+            border: 1px solid var(--border, #333);
+            background: var(--bg);
+            color: var(--text);
+            font-size: .9rem;
+        }
+        .auth-field input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px var(--accent-soft);
+        }
+        .auth-field .err { color: var(--danger); font-size: .78rem; margin-top: .25rem; min-height: 1em; }
+        .auth-remember {
+            display: flex;
+            align-items: center;
+            gap: .5rem;
+            margin: .25rem 0 1rem;
+            color: var(--text-muted);
+            font-size: .82rem;
+            user-select: none;
+        }
+        .auth-remember input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            accent-color: var(--accent);
+        }
+        .auth-actions .btn-primary { width: 100%; padding: .5rem; }
+        .auth-msg { text-align: center; margin-top: .75rem; font-size: .82rem; min-height: 1em; }
+        .auth-msg.error { color: var(--danger); }
+        .auth-msg.success { color: var(--success); }
+    </style>
+</head>
+<body>
+    <div class="auth-wrap">
+        <div class="auth-card">
+            <span class="brand">MyTickTick</span>
+            <p class="subtitle">Tu panel de tareas y seguimiento personal</p>
+
+            <div class="auth-tabs" role="tablist">
+                <button id="tab-login" class="active" role="tab" aria-selected="true">Ingresar</button>
+                <button id="tab-register" role="tab" aria-selected="false">Crear cuenta</button>
+            </div>
+
+            <!-- Formulario de login -->
+            <form id="login-form" novalidate>
+                <div class="auth-field">
+                    <label for="login-username">Usuario</label>
+                    <input type="text" id="login-username" name="username" autocomplete="username" required>
+                    <div class="err" id="login-username-err"></div>
+                </div>
+                <div class="auth-field">
+                    <label for="login-password">Contraseña</label>
+                    <input type="password" id="login-password" name="password" autocomplete="current-password" required>
+                    <div class="err" id="login-password-err"></div>
+                </div>
+                <label class="auth-remember">
+                    <input type="checkbox" id="login-remember">
+                    Recordarme (sesión de larga duración)
+                </label>
+                <div class="auth-actions">
+                    <button type="submit" class="btn btn-primary" id="login-submit">Ingresar</button>
+                </div>
+            </form>
+
+            <!-- Formulario de registro -->
+            <form id="register-form" novalidate hidden>
+                <div class="auth-field">
+                    <label for="reg-username">Usuario</label>
+                    <input type="text" id="reg-username" name="username" autocomplete="username" required minlength="3">
+                    <div class="err" id="reg-username-err"></div>
+                </div>
+                <div class="auth-field">
+                    <label for="reg-password">Contraseña</label>
+                    <input type="password" id="reg-password" name="password" autocomplete="new-password" required minlength="6">
+                    <div class="err" id="reg-password-err"></div>
+                </div>
+                <div class="auth-actions">
+                    <button type="submit" class="btn btn-primary" id="reg-submit">Crear cuenta</button>
+                </div>
+            </form>
+
+            <div class="auth-msg" id="auth-msg"></div>
+        </div>
+    </div>
+
+    <script>
+    (function () {
+        'use strict';
+
+        var API = window.API_BASE || '/api';
+
+        // ¿Ya hay sesión? Si el health responde y hay cookie, ir directo a home.
+        function redirectToNext() {
+            var params = new URLSearchParams(window.location.search);
+            var next = params.get('next');
+            window.location.href = (next && next.charAt(0) === '/') ? next : '/';
+        }
+
+        function post(url, payload) {
+            return fetch(API + url, {
+                method: 'POST',
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            }).then(function (res) {
+                return res.json().catch(function () { return {}; }).then(function (body) {
+                    return { status: res.status, body: body, ok: res.ok };
+                });
+            });
+        }
+
+        function msg(text, kind) {
+            var el = document.getElementById('auth-msg');
+            el.textContent = text || '';
+            el.className = 'auth-msg' + (kind ? ' ' + kind : '');
+        }
+
+        var tabLogin = document.getElementById('tab-login');
+        var tabRegister = document.getElementById('tab-register');
+        var loginForm = document.getElementById('login-form');
+        var registerForm = document.getElementById('register-form');
+
+        function showTab(which) {
+            var isLogin = which === 'login';
+            tabLogin.classList.toggle('active', isLogin);
+            tabRegister.classList.toggle('active', !isLogin);
+            tabLogin.setAttribute('aria-selected', isLogin ? 'true' : 'false');
+            tabRegister.setAttribute('aria-selected', isLogin ? 'false' : 'true');
+            loginForm.hidden = !isLogin;
+            registerForm.hidden = isLogin;
+            msg('');
+        }
+
+        tabLogin.addEventListener('click', function () { showTab('login'); });
+        tabRegister.addEventListener('click', function () { showTab('register'); });
+
+        loginForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+            var username = document.getElementById('login-username').value.trim();
+            var password = document.getElementById('login-password').value;
+            var remember = document.getElementById('login-remember').checked;
+
+            if (!username) { document.getElementById('login-username-err').textContent = 'Ingresá tu usuario'; return; }
+            if (!password) { document.getElementById('login-password-err').textContent = 'Ingresá tu contraseña'; return; }
+
+            var btn = document.getElementById('login-submit');
+            btn.disabled = true;
+            btn.textContent = 'Ingresando…';
+            post('/login', { username: username, password: password, remember: remember })
+                .then(function (r) {
+                    if (r.ok) {
+                        msg('Sesión iniciada. ¡Bienvenido!', 'success');
+                        setTimeout(redirectToNext, 250);
+                    } else {
+                        msg((r.body && r.body.error) || 'Usuario o contraseña incorrectos', 'error');
+                    }
+                })
+                .catch(function (err) {
+                    msg('No se pudo conectar: ' + err.message, 'error');
+                })
+                .then(function () {
+                    btn.disabled = false;
+                    btn.textContent = 'Ingresar';
+                });
+        });
+
+        registerForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+            var username = document.getElementById('reg-username').value.trim();
+            var password = document.getElementById('reg-password').value;
+
+            if (username.length < 3) { document.getElementById('reg-username-err').textContent = 'Mínimo 3 caracteres'; return; }
+            if (password.length < 6) { document.getElementById('reg-password-err').textContent = 'Mínimo 6 caracteres'; return; }
+
+            var btn = document.getElementById('reg-submit');
+            btn.disabled = true;
+            btn.textContent = 'Creando cuenta…';
+            post('/register', { username: username, password: password })
+                .then(function (r) {
+                    if (r.ok) {
+                        // El backend ya inicia sesión: ir a la app.
+                        msg('Cuenta creada. ¡Bienvenido!', 'success');
+                        setTimeout(redirectToNext, 250);
+                    } else {
+                        var text = (r.body && r.body.error) || 'No se pudo crear la cuenta';
+                        if (/already exists/i.test(text)) text = 'Ese usuario ya existe';
+                        msg(text, 'error');
+                    }
+                })
+                .catch(function (err) {
+                    msg('No se pudo conectar: ' + err.message, 'error');
+                })
+                .then(function () {
+                    btn.disabled = false;
+                    btn.textContent = 'Crear cuenta';
+                });
+        });
+
+        // Si ya hay sesión válida, no mostrar login: ir a la app.
+        fetch(API + '/health', { credentials: 'include' })
+            .then(function () {
+                // Probar una ruta protegida para ver si hay cookie.
+                return fetch(API + '/trackers', { credentials: 'include' });
+            })
+            .then(function (res) {
+                if (res.status === 200) redirectToNext();
+            })
+            .catch(function () { /* sin sesión: mostrar login */ });
+    })();
+    </script>
+</body>
+</html>

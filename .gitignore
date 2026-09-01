@@ -1,0 +1,20 @@
+# Binarios
+api
+main
+tui
+/bin/
+
+# Entorno
+.env
+
+# Artifacts locales
+8080
+
+# Go
+*.test
+*.out
+
+# Editor / SO
+.vscode/
+.idea/
+.DS_Store

@@ -1,0 +1,29 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: myticktick_postgres
+    environment:
+      POSTGRES_USER: myticktick
+      POSTGRES_PASSWORD: myticktick
+      POSTGRES_DB: myticktick
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  api:
+    build: .
+    container_name: myticktick_api
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=myticktick
+      - DB_PASSWORD=myticktick
+      - DB_NAME=myticktick
+
+volumes:
+  postgres_data:
