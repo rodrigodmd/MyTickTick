@@ -144,7 +144,6 @@ vm.runInContext(code, sandbox);
   if (pesoLimit.label !== 'Máximo: 80 kg') throw new Error('Peso: etiqueta de límite inesperada: ' + pesoLimit.label);
   if (JSON.stringify(pesoLimit.borderDash) !== '[6,4]') throw new Error('Peso: la línea de límite debe ser punteada');
   if (pesoLimit.pointRadius !== 0) throw new Error('Peso: la línea de límite no debe tener puntos');
-  if (pesoLimit.borderColor !== '#22d3ee') throw new Error('Peso: el umbral debe ser cian, no el color por defecto: ' + pesoLimit.borderColor);
   if (!pesoLimit.data.every(v => v === 80)) throw new Error('Peso: la línea de límite no es horizontal en 80');
   if (peso.cfg.options.scales.y.beginAtZero) throw new Error('Peso: la escala Y no debe arrancar en 0 con límite');
   if (!(peso.cfg.options.scales.y.min <= 80 && peso.cfg.options.scales.y.max >= 80)) {
@@ -166,53 +165,6 @@ vm.runInContext(code, sandbox);
   const sinLimite = byName['Sin límite'];
   if (sinLimite.cfg.data.datasets.length !== 1) throw new Error('Sin límite: no debe tener dataset de límite');
   console.log('  línea de límite: Peso "Máximo: 80 kg" ✓, Sueño "Mínimo: 8 h" ✓, Sin límite sin línea ✓');
-
-  // 2a-bis) Colores de cumplimiento: puntos y segmentos verde/rojo según isMet.
-  const MET = '#10b981', MISS = '#ef4444', NEUTRAL = '#60a5fa';
-  const pesoPts = peso.cfg.data.datasets[0].pointBackgroundColor;
-  if (JSON.stringify(pesoPts) !== JSON.stringify([MISS, MISS, MISS])) {
-    throw new Error('Peso: puntos deberían ser todos rojos (no cumple máx 80): ' + JSON.stringify(pesoPts));
-  }
-  const pesoSeg = peso.cfg.data.datasets[0].segment && peso.cfg.data.datasets[0].segment.borderColor;
-  if (typeof pesoSeg !== 'function') throw new Error('Peso: falta segment.borderColor');
-  if (pesoSeg({ p1DataIndex: 0 }) !== MISS) throw new Error('Peso: segmento 0 debería ser rojo');
-
-  const suenoPts = sueno.cfg.data.datasets[0].pointBackgroundColor;
-  if (JSON.stringify(suenoPts) !== JSON.stringify([MISS, MET, MISS])) {
-    throw new Error('Sueño: puntos deberían ser rojo/verde/rojo: ' + JSON.stringify(suenoPts));
-  }
-  const suenoSeg = sueno.cfg.data.datasets[0].segment.borderColor;
-  if (suenoSeg({ p1DataIndex: 0 }) !== MISS) throw new Error('Sueño: segmento hacia 7h debería ser rojo');
-  if (suenoSeg({ p1DataIndex: 1 }) !== MET) throw new Error('Sueño: segmento hacia 8h debería ser verde');
-  if (suenoSeg({ p1DataIndex: 2 }) !== MISS) throw new Error('Sueño: segmento hacia 7.5h debería ser rojo');
-  if (sueno.cfg.data.datasets[1].borderColor !== '#22d3ee') {
-    throw new Error('Sueño: el umbral debe ser cian: ' + sueno.cfg.data.datasets[1].borderColor);
-  }
-
-  const sinLimitePts = sinLimite.cfg.data.datasets[0].pointBackgroundColor;
-  if (!sinLimitePts.every(c => c === NEUTRAL)) {
-    throw new Error('Sin límite: la línea debe ser neutra, no verde/rojo: ' + JSON.stringify(sinLimitePts));
-  }
-
-  const pesoLabel = peso.cfg.options.plugins.tooltip.callbacks.label;
-  const pesoTip = pesoLabel({ parsed: { y: 81.2 }, dataIndex: 0 });
-  if (!pesoTip.includes('no cumplió')) throw new Error('Peso: tooltip debería decir no cumplió: ' + pesoTip);
-  const suenoLabel = sueno.cfg.options.plugins.tooltip.callbacks.label;
-  const suenoTip = suenoLabel({ parsed: { y: 8 }, dataIndex: 1 });
-  if (!suenoTip.includes('cumplió') || suenoTip.includes('no cumplió')) {
-    throw new Error('Sueño: tooltip del punto cumplido inesperado: ' + suenoTip);
-  }
-
-  if (sandbox.entryIsMet({ value: 79 }, { limitType: 'max', limitValue: 80 }, true) !== true) {
-    throw new Error('fallback entryIsMet: 79 <= 80 max debería cumplir');
-  }
-  if (sandbox.entryIsMet({ value: 7 }, { limitType: 'min', limitValue: 8 }, true) !== false) {
-    throw new Error('fallback entryIsMet: 7 < 8 min no debería cumplir');
-  }
-  if (sandbox.entryIsMet({ value: 2 }, { limitType: 'max', limitValue: 0 }, false) !== null) {
-    throw new Error('fallback entryIsMet: sin límite debe devolver null');
-  }
-  console.log('  colores: Peso rojo (no cumple) ✓, Sueño rojo/verde/rojo ✓, umbral cian ✓, Sin límite neutro ✓');
 
   for (const c of withChart) {
     if (c.cfg.data.datasets[0].data.length !== c.cfg.data.labels.length) {

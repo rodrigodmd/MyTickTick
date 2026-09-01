@@ -827,35 +827,6 @@ main {
     margin-bottom: 0;
 }
 
-.chart-key {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.45rem 0.9rem;
-    font-size: 0.72rem;
-    color: var(--text-muted);
-    margin: 0 0 0.5rem;
-}
-
-.chart-key__swatch {
-    display: inline-block;
-    width: 0.7rem;
-    height: 0.7rem;
-    border-radius: 50%;
-    margin-right: 0.3rem;
-    vertical-align: -0.05rem;
-}
-
-.chart-key__swatch--met { background: #10b981; }
-.chart-key__swatch--miss { background: #ef4444; }
-.chart-key__swatch--limit {
-    background: transparent;
-    border-radius: 0;
-    border-top: 2px dashed #22d3ee;
-    height: 0;
-    width: 0.9rem;
-    vertical-align: 0.15rem;
-}
-
 .tracker-carousel-nav {
     display: flex;
     gap: 0.4rem;

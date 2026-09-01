@@ -126,7 +126,6 @@ function displayTasks(tasks) {
                 ${dueBadge}
             </div>
             <div class="task-actions">
-                <button class="btn btn-ghost" onclick="openEditForm(${task.id})">Editar</button>
                 <button class="btn btn-ghost btn-danger" onclick="deleteTask(${task.id})">Eliminar</button>
             </div>
         </div>`;
@@ -136,8 +135,8 @@ function displayTasks(tasks) {
     bindListInteractions(container);
 }
 
-// Vincular toggle (clic) + swipe sobre cada item: cambiar el estado de
-// completada (toggle o swipe, sin confirmación) con toast "Deshacer".
+// Vincular toggle (clic) + swipe sobre cada item para cambiar el estado y
+// long press para editar sin necesitar un botón adicional en la card.
 function bindListInteractions(container) {
     if (!container) return;
     const items = container.querySelectorAll('.task-item[data-id]');
@@ -145,6 +144,7 @@ function bindListInteractions(container) {
         const id = Number(item.getAttribute('data-id'));
         MyTickTick.attachToggle(item, { onClick: function () { toggleTask(id); } });
         MyTickTick.attachSwipe(item, { onSwipe: function () { toggleTask(id); }, color: 'green' });
+        MyTickTick.attachLongPress(item, { onLongPress: function () { openEditForm(id); } });
     });
 }
 

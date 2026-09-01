@@ -11,13 +11,6 @@ let trackerCharts = []; // un Chart por tracker (carousel)
 const MONTH_NAMES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
     'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
 
-// Colores del gráfico de trackers (alineados con --success / --danger del tema).
-// El umbral usa cian para no competir con verde/rojo ni con el acento naranja.
-const TRACKER_LINE_MET = '#10b981';
-const TRACKER_LINE_MISS = '#ef4444';
-const TRACKER_LINE_LIMIT = '#22d3ee';
-const TRACKER_LINE_NEUTRAL = '#60a5fa';
-
 document.addEventListener('DOMContentLoaded', function () {
     initFilters();
     loadDashboard();
@@ -214,24 +207,6 @@ function fmtLimit(v) {
     return String(n);
 }
 
-// Cumplimiento de un registro: usa isMet del backend; si falta, evalúa
-// contra el límite del tracker (misma regla que EvaluateLimit en Go).
-// Devuelve null si el tracker no tiene límite (línea neutra).
-function entryIsMet(entry, tracker, hasLimit) {
-    if (!hasLimit) return null;
-    if (typeof entry.isMet === 'boolean') return entry.isMet;
-    const v = Number(entry.value);
-    const limit = Number(tracker.limitValue);
-    if (!isFinite(v) || !isFinite(limit)) return null;
-    if (tracker.limitType === 'min') return v >= limit;
-    return v <= limit;
-}
-
-function colorForMet(isMet) {
-    if (isMet === null || isMet === undefined) return TRACKER_LINE_NEUTRAL;
-    return isMet ? TRACKER_LINE_MET : TRACKER_LINE_MISS;
-}
-
 // Carousel: un gráfico de líneas POR TRACKER dentro del rango del mes/año
 // seleccionado. Cada tracker tiene su propia pantalla (peso no se mezcla con
 // sueño, etc.) y se desliza entre ellos con swipe o con las flechas.
@@ -289,25 +264,14 @@ async function renderTrackerChart(trackers, month, year) {
                 ? ((tracker.limitType === 'min' ? 'Mínimo' : 'Máximo') + ': ' + fmtLimit(limitValue) + unit)
                 : null;
 
-            // Dataset 1: valores registrados. Cada punto y el segmento que
-            // llega a él se pintan verde (cumplió) o rojo (no cumplió).
-            const mets = rows.map(r => entryIsMet(r, tracker, hasLimit));
-            const pointColors = mets.map(colorForMet);
+            // Dataset 1: los valores registrados (línea continua).
             const datasets = [{
                 label: tracker.name,
                 data: rows.map(r => r.value),
                 fill: false,
                 tension: 0.1,
                 spanGaps: true,
-                pointRadius: 4,
-                pointHoverRadius: 6,
-                pointBackgroundColor: pointColors,
-                pointBorderColor: pointColors,
-                borderColor: hasLimit ? TRACKER_LINE_MET : TRACKER_LINE_NEUTRAL,
-                borderWidth: 2,
-                segment: {
-                    borderColor: (ctx) => colorForMet(mets[ctx.p1DataIndex])
-                }
+                pointRadius: 3
             }];
 
             if (hasLimit) {
@@ -326,9 +290,7 @@ async function renderTrackerChart(trackers, month, year) {
                     label: limitLabel,
                     data: rows.map(() => limitValue),
                     borderDash: [6, 4],
-                    borderWidth: 2,
-                    borderColor: TRACKER_LINE_LIMIT,
-                    backgroundColor: TRACKER_LINE_LIMIT,
+                    borderWidth: 1.5,
                     pointRadius: 0,
                     fill: false
                 });
@@ -361,12 +323,7 @@ async function renderTrackerChart(trackers, month, year) {
                                 return item.datasetIndex === 0;
                             },
                             callbacks: {
-                                label: (item) => {
-                                    const base = ` ${item.parsed.y}${unit}`;
-                                    const met = mets[item.dataIndex];
-                                    if (met === null || met === undefined) return base;
-                                    return base + (met ? ' · cumplió' : ' · no cumplió');
-                                }
+                                label: (item) => ` ${item.parsed.y}${unit}`
                             }
                         }
                     }
