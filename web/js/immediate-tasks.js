@@ -113,6 +113,13 @@ function displayTasks(tasks) {
         const checkbox = task.isCompleted
             ? '<span class="task-toggle task-toggle--on" aria-hidden="true">✓</span>'
             : '<span class="task-toggle" aria-hidden="true"></span>';
+        // En la card, la eliminación rápida solo corresponde a tareas ya
+        // completadas. Las pendientes siguen pudiéndose eliminar desde Editar.
+        const completedDeleteAction = task.isCompleted
+            ? `<div class="task-actions task-actions--completed">
+                <button class="btn btn-ghost btn-danger completed-delete-action" onclick="deleteTask(${task.id})">Eliminar</button>
+            </div>`
+            : '';
         return `
         <div class="${itemClass}" data-id="${task.id}">
             <div class="task-item__head">
@@ -125,9 +132,7 @@ function displayTasks(tasks) {
                 <span class="priority priority-${priority}">${priority}</span>
                 ${dueBadge}
             </div>
-            <div class="task-actions">
-                <button class="btn btn-ghost btn-danger" onclick="deleteTask(${task.id})">Eliminar</button>
-            </div>
+            ${completedDeleteAction}
         </div>`;
     }).join('');
 
